@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Expense } from '@/types/expense';
-import { exportToCSV } from '@/lib/utils';
+import { ExportFormat } from '@/lib/exporters';
 import { useExpenses } from '@/hooks/useExpenses';
 import Modal from '@/components/Modal';
 import SummaryCards from '@/components/SummaryCards';
@@ -11,6 +11,7 @@ import CategoryChart from '@/components/CategoryChart';
 import FilterBar from '@/components/FilterBar';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
+import ExportModal from '@/components/ExportModal';
 
 type ModalState =
   | { type: 'closed' }
@@ -34,6 +35,7 @@ export default function Home() {
   } = useExpenses();
 
   const [modal, setModal] = useState<ModalState>({ type: 'closed' });
+  const [exportOpen, setExportOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   function showToast(message: string, type: 'success' | 'error' = 'success') {
@@ -59,13 +61,9 @@ export default function Home() {
     showToast('Expense deleted', 'error');
   }
 
-  function handleExport() {
-    if (expenses.length === 0) {
-      showToast('No expenses to export', 'error');
-      return;
-    }
-    exportToCSV(expenses);
-    showToast(`Exported ${expenses.length} expenses`);
+  function handleExportComplete(count: number, format: ExportFormat) {
+    const label = format.toUpperCase();
+    showToast(`Exported ${count} record${count !== 1 ? 's' : ''} as ${label}`);
   }
 
   return (
@@ -89,14 +87,14 @@ export default function Home() {
           {/* Actions */}
           <div className="flex items-center gap-2">
             <button
-              onClick={handleExport}
+              onClick={() => setExportOpen(true)}
               className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
-              title="Export to CSV"
+              title="Export data"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
-              Export CSV
+              Export Data
             </button>
             <button
               onClick={() => setModal({ type: 'add' })}
@@ -176,6 +174,14 @@ export default function Home() {
           Data stored locally in your browser · No account required
         </p>
       </footer>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={exportOpen}
+        onClose={() => setExportOpen(false)}
+        expenses={expenses}
+        onExportComplete={handleExportComplete}
+      />
 
       {/* Add / Edit Modal */}
       <Modal
