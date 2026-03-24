@@ -27,6 +27,9 @@ This project is built to be "AI-First." It exposes primitives that allow LLMs (C
 | **Resources** | Ground Truth | `docs://compliance-rules`, `file://current_budget.json` |
 | **Prompts** | Expert Logic | `analyze-spending-habits`, `detect-fraud-patterns` |
 
+
+![Dashboard Overview](https://github.com/user-attachments/assets/c47cb4cd-90bd-4ab9-92d6-452e04d25cce)
+
 ---
 
 ## Getting Started
