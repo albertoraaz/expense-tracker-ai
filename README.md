@@ -48,3 +48,13 @@ cd expense-tracker-ai
 
 # Install dependencies
 npm install
+```
+### 3. Local Development
+```bash
+# Start the Next.js dev server
+npm run dev
+
+# (Optional) Test the MCP Server logic
+export DANGEROUSLY_OMIT_AUTH=true
+npx @modelcontextprotocol/inspector src/server/mcp_main.py
+```
