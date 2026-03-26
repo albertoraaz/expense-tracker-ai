@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { Expense } from '@/types/expense';
-import { ExportFormat } from '@/lib/exporters';
 import { useExpenses } from '@/hooks/useExpenses';
 import Modal from '@/components/Modal';
 import SummaryCards from '@/components/SummaryCards';
@@ -11,7 +10,7 @@ import CategoryChart from '@/components/CategoryChart';
 import FilterBar from '@/components/FilterBar';
 import ExpenseForm from '@/components/ExpenseForm';
 import ExpenseList from '@/components/ExpenseList';
-import ExportModal from '@/components/ExportModal';
+import CloudHubPanel from '@/components/CloudHubPanel';
 
 type ModalState =
   | { type: 'closed' }
@@ -35,12 +34,12 @@ export default function Home() {
   } = useExpenses();
 
   const [modal, setModal] = useState<ModalState>({ type: 'closed' });
-  const [exportOpen, setExportOpen] = useState(false);
+  const [hubOpen, setHubOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   function showToast(message: string, type: 'success' | 'error' = 'success') {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 2500);
+    setTimeout(() => setToast(null), 2800);
   }
 
   function handleAdd(data: Omit<Expense, 'id' | 'createdAt'>) {
@@ -59,11 +58,6 @@ export default function Home() {
   function handleDelete(id: string) {
     deleteExpense(id);
     showToast('Expense deleted', 'error');
-  }
-
-  function handleExportComplete(count: number, format: ExportFormat) {
-    const label = format.toUpperCase();
-    showToast(`Exported ${count} record${count !== 1 ? 's' : ''} as ${label}`);
   }
 
   return (
@@ -86,16 +80,19 @@ export default function Home() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {/* Sync Hub button — the V3 entry point */}
             <button
-              onClick={() => setExportOpen(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors"
-              title="Export data"
+              onClick={() => setHubOpen(true)}
+              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors relative"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
               </svg>
-              Export Data
+              Sync Hub
+              {/* Live indicator dot */}
+              <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white" />
             </button>
+
             <button
               onClick={() => setModal({ type: 'add' })}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
@@ -137,27 +134,36 @@ export default function Home() {
                 {expenses.length} total · {filteredExpenses.length} shown
               </p>
             </div>
-            <button
-              onClick={() => setModal({ type: 'add' })}
-              className="sm:hidden flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Mobile Sync Hub trigger */}
+              <button
+                onClick={() => setHubOpen(true)}
+                className="sm:hidden flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                </svg>
+                Sync
+              </button>
+              <button
+                onClick={() => setModal({ type: 'add' })}
+                className="sm:hidden flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add
+              </button>
+            </div>
           </div>
 
           <div className="p-4 space-y-4">
-            {/* Filters */}
             <FilterBar
               filters={filters}
               setFilters={setFilters}
               onReset={resetFilters}
               totalResults={filteredExpenses.length}
             />
-
-            {/* List */}
             <ExpenseList
               expenses={filteredExpenses}
               onEdit={(expense) => setModal({ type: 'edit', expense })}
@@ -171,16 +177,16 @@ export default function Home() {
       {/* Footer */}
       <footer className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         <p className="text-center text-xs text-slate-400">
-          Data stored locally in your browser · No account required
+          Data stored locally · Sync Hub connects to cloud services
         </p>
       </footer>
 
-      {/* Export Modal */}
-      <ExportModal
-        isOpen={exportOpen}
-        onClose={() => setExportOpen(false)}
+      {/* Cloud Sync Hub — right-side drawer */}
+      <CloudHubPanel
+        isOpen={hubOpen}
+        onClose={() => setHubOpen(false)}
         expenses={expenses}
-        onExportComplete={handleExportComplete}
+        onToast={showToast}
       />
 
       {/* Add / Edit Modal */}
@@ -200,7 +206,7 @@ export default function Home() {
       {/* Toast notification */}
       {toast && (
         <div
-          className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 animate-slide-up ${
+          className={`fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 animate-slide-up ${
             toast.type === 'success'
               ? 'bg-slate-900 text-white'
               : 'bg-red-500 text-white'
